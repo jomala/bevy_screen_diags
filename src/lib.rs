@@ -6,7 +6,7 @@ use bevy::{
 /// The plugin
 #[derive(Debug, Default, Clone)]
 pub struct ScreenDiagsPlugin {
-    settings: ScreenDiagsSettings,
+    pub settings: ScreenDiagsSettings,
 }
 
 impl Plugin for ScreenDiagsPlugin {
@@ -21,8 +21,8 @@ impl Plugin for ScreenDiagsPlugin {
 /// The settings
 #[derive(Debug, Clone)]
 pub struct ScreenDiagsSettings {
-    interval: Duration,
-    enabled: bool,
+    pub interval: Duration,
+    pub enabled: bool,
 }
 
 impl Default for ScreenDiagsSettings {
@@ -48,11 +48,12 @@ struct ScreenDiagsState {
 }
 
 fn update(settings: Res<ScreenDiagsSettings>, time: Res<Time>, mut query: Query<(&mut Text, &mut ScreenDiagsText)>) {
+    let now: Instant = time.last_update().unwrap_or_else(|| time.startup());
     for (mut text, mut marker) in query.iter_mut() {
         if let Some(state) = marker.state.as_mut() {
             state.frame_count += 1;
 
-            let so_far = Instant::now() - state.last_time;
+            let so_far = now - state.last_time;
             if so_far > settings.interval {
                 if settings.enabled {
                     let fps = state.frame_count as f64 / so_far.as_secs_f64();
@@ -66,14 +67,17 @@ fn update(settings: Res<ScreenDiagsSettings>, time: Res<Time>, mut query: Query<
         }
         if marker.state.is_none() {
             marker.state = Some(ScreenDiagsState {
-                last_time: Instant::now(),
+                last_time: now,
                 frame_count: 0,
             });
         }
     }
 }
 
-fn setup(commands: &mut Commands, asset_server: Res<AssetServer>) {
+fn setup(commands: &mut Commands, mut assets: ResMut<Assets<Font>>) {
+    let font_bytes = include_bytes!("../assets/fonts/FiraSans-Bold.ttf").to_vec();
+    let font_struct = Font::try_from_bytes(font_bytes).expect("Font should be present and valid");
+    let font = assets.add(font_struct);
     commands
         .spawn(TextBundle {
             style: Style {
@@ -82,9 +86,9 @@ fn setup(commands: &mut Commands, asset_server: Res<AssetServer>) {
             },
             text: Text {
                 value: "FPS: ...".to_owned(),
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font,
                 style: TextStyle {
-                    font_size: 60.0,
+                    font_size: 32.0,
                     color: Color::WHITE,
                     ..Default::default()
                 },
