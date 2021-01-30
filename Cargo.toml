@@ -1,0 +1,16 @@
+[package]
+name = "bevy_screen_diags"
+description = "An on-screen FPS display for bevyengine.org"
+categories = ["game-development"]
+keywords = ["bevy", "gamedev", "graphics"]
+version = "0.1.0"
+authors = ["Jonathan Lawn <Jonathan.M.Lawn@gmail.com>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/bevy_screen_diags/"
+repository = "https://github.com/jomala/bevy_screen_diags/"
+edition = "2018"
+publish = false
+
+[dependencies]
+bevy = "0.4"
