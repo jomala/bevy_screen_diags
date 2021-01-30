@@ -10,7 +10,6 @@ readme = "README.md"
 documentation = "https://docs.rs/bevy_screen_diags/"
 repository = "https://github.com/jomala/bevy_screen_diags/"
 edition = "2018"
-publish = false
 
 [dependencies]
 bevy = "0.4"

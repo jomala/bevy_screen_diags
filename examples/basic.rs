@@ -7,12 +7,14 @@ use bevy_screen_diags::ScreenDiagsPlugin;
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
+        // Include the plugin
         .add_plugin(ScreenDiagsPlugin::default())
         .add_startup_system(setup.system())
         .run();
 }
 
 fn setup(commands: &mut Commands) {
-    commands
-        .spawn(CameraUiBundle::default());
+    // Add further cameras to test that they interoperate with the one in the plugin.
+    commands.spawn(Camera3dBundle::default());
+    commands.spawn(CameraUiBundle::default());
 }

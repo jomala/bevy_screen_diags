@@ -1,27 +1,33 @@
+//! A simple library to provide an on-screen FPS display for Bevy projects.
+
 use bevy::{
-    utils::{Duration, Instant},
     prelude::*,
+    utils::{Duration, Instant},
 };
 
 /// The plugin
 #[derive(Debug, Default, Clone)]
 pub struct ScreenDiagsPlugin {
+    /// The configurable settings for the plugin.
     pub settings: ScreenDiagsSettings,
 }
 
 impl Plugin for ScreenDiagsPlugin {
-	fn build(&self, app: &mut AppBuilder) {
-		app
-            .add_resource(self.settings.clone())
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_resource(self.settings.clone())
             .add_startup_system(setup.system())
             .add_system(update.system());
-        }
+    }
 }
 
 /// The settings
 #[derive(Debug, Clone)]
 pub struct ScreenDiagsSettings {
+    /// The interval between screen updates. A balance between being responsive
+    /// and easy to read. Defaults to 1 second.
     pub interval: Duration,
+    /// Whether the FPS display is enabled.  Any change in status
+    /// will be responded to at the end of the `interval`. Defaults to true.
     pub enabled: bool,
 }
 
@@ -47,7 +53,12 @@ struct ScreenDiagsState {
     frame_count: u32,
 }
 
-fn update(settings: Res<ScreenDiagsSettings>, time: Res<Time>, mut query: Query<(&mut Text, &mut ScreenDiagsText)>) {
+/// Update the FPS state and, if sufficient time has passed, change the display.
+fn update(
+    settings: Res<ScreenDiagsSettings>,
+    time: Res<Time>,
+    mut query: Query<(&mut Text, &mut ScreenDiagsText)>,
+) {
     let now: Instant = time.last_update().unwrap_or_else(|| time.startup());
     for (mut text, mut marker) in query.iter_mut() {
         if let Some(state) = marker.state.as_mut() {
@@ -74,11 +85,18 @@ fn update(settings: Res<ScreenDiagsSettings>, time: Res<Time>, mut query: Query<
     }
 }
 
+/// Set up the UI camera, the text element and, attached to it, the plugin state.
 fn setup(commands: &mut Commands, mut assets: ResMut<Assets<Font>>) {
+    // The font file to use is included in this crate so you don't need to access the file at runtime.
+    // Here we load it as an asset.
     let font_bytes = include_bytes!("../assets/fonts/FiraSans-Bold.ttf").to_vec();
     let font_struct = Font::try_from_bytes(font_bytes).expect("Font should be present and valid");
     let font = assets.add(font_struct);
+
     commands
+        // The UI camera is required to show the text. It can coexist with other cameras.
+        .spawn(CameraUiBundle::default())
+        // The text is not currently configurable, but could be.
         .spawn(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
@@ -95,5 +113,6 @@ fn setup(commands: &mut Commands, mut assets: ResMut<Assets<Font>>) {
             },
             ..Default::default()
         })
+        // The state is not set up initially. This is to avoid the start-up time being counted as the first frame.
         .with(ScreenDiagsText::default());
 }
