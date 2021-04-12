@@ -13,8 +13,8 @@ fn main() {
         .run();
 }
 
-fn setup(commands: &mut Commands) {
+fn setup(mut commands: Commands) {
     // Add further cameras to test that they interoperate with the one in the plugin.
-    commands.spawn(Camera3dBundle::default());
-    commands.spawn(CameraUiBundle::default());
+    commands.spawn_bundle(PerspectiveCameraBundle::default());
+    commands.spawn_bundle(UiCameraBundle::default());
 }

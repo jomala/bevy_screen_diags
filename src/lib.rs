@@ -14,7 +14,7 @@ pub struct ScreenDiagsPlugin {
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(self.settings.clone())
+        app.insert_resource(self.settings.clone())
             .add_startup_system(setup.system())
             .add_system(update.system());
     }
@@ -68,9 +68,9 @@ fn update(
             if so_far > settings.interval {
                 if settings.enabled {
                     let fps = state.frame_count as f64 / so_far.as_secs_f64();
-                    text.value = format!("FPS: {:4.0}", fps);
+                    text.sections[0].value = format!("FPS: {:4.0}", fps);
                 } else {
-                    text.value = "".to_owned();
+                    text.sections[0].value = "".to_owned();
                 }
 
                 marker.state = None;
@@ -86,33 +86,29 @@ fn update(
 }
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
-fn setup(commands: &mut Commands, mut assets: ResMut<Assets<Font>>) {
+fn setup(mut commands: Commands, mut assets: ResMut<Assets<Font>>) {
     // The font file to use is included in this crate so you don't need to access the file at runtime.
     // Here we load it as an asset.
     let font_bytes = include_bytes!("../assets/fonts/FiraSans-Bold.ttf").to_vec();
     let font_struct = Font::try_from_bytes(font_bytes).expect("Font should be present and valid");
     let font = assets.add(font_struct);
 
+    // The UI camera is required to show the text. It can coexist with other cameras.
+    commands.spawn_bundle(UiCameraBundle::default());
+    // The text is not currently configurable, but could be.
     commands
-        // The UI camera is required to show the text. It can coexist with other cameras.
-        .spawn(CameraUiBundle::default())
-        // The text is not currently configurable, but could be.
-        .spawn(TextBundle {
-            style: Style {
-                align_self: AlignSelf::FlexEnd,
-                ..Default::default()
-            },
-            text: Text {
-                value: "FPS: ...".to_owned(),
-                font,
-                style: TextStyle {
+        .spawn_bundle(TextBundle {
+            text: Text::with_section(
+                "FPS: ...",
+                TextStyle {
+                    font,
                     font_size: 32.0,
                     color: Color::WHITE,
-                    ..Default::default()
                 },
-            },
+                TextAlignment::default()
+            ),
             ..Default::default()
         })
         // The state is not set up initially. This is to avoid the start-up time being counted as the first frame.
-        .with(ScreenDiagsText::default());
+        .insert(ScreenDiagsText::default());
 }
