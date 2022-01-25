@@ -1,6 +1,7 @@
 //! A simple library to provide an on-screen FPS display for Bevy projects.
 
 use bevy::{
+    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
     utils::{Duration, Instant},
 };
@@ -15,6 +16,7 @@ pub struct ScreenDiagsPlugin {
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.settings)
+            .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_startup_system(setup)
             .add_system(update);
     }
@@ -50,39 +52,35 @@ struct ScreenDiagsText {
 #[derive(Debug, Copy, Clone)]
 struct ScreenDiagsState {
     last_time: Instant,
-    frame_count: u32,
 }
 
-/// Update the FPS state and, if sufficient time has passed, change the display.
 fn update(
-    settings: Res<ScreenDiagsSettings>,
     time: Res<Time>,
+    diagnostics: Res<Diagnostics>,
+    settings: Res<ScreenDiagsSettings>,
     mut query: Query<(&mut Text, &mut ScreenDiagsText)>,
 ) {
-    let now: Instant = time.last_update().unwrap_or_else(|| time.startup());
-    for (mut text, mut marker) in query.iter_mut() {
-        if let Some(state) = marker.state.as_mut() {
-            state.frame_count += 1;
+    if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+        if let Some(average) = fps.average() {
+            for (mut text, mut marker) in query.iter_mut() {
+                let now: Instant = time.last_update().unwrap_or_else(|| time.startup());
+                if let Some(state) = marker.state.as_mut() {
+                    let so_far = now - state.last_time;
+                    if so_far > settings.interval {
+                        text.sections[0].value = if settings.enabled {
+                            format!("FPS: {:4.0}", average)
+                        } else {
+                            "".to_owned()
+                        };
 
-            let so_far = now - state.last_time;
-            if so_far > settings.interval {
-                if settings.enabled {
-                    let fps = state.frame_count as f64 / so_far.as_secs_f64();
-                    text.sections[0].value = format!("FPS: {:4.0}", fps);
+                        marker.state = None;
+                    }
                 } else {
-                    text.sections[0].value = "".to_owned();
+                    marker.state = Some(ScreenDiagsState { last_time: now });
                 }
-
-                marker.state = None;
             }
         }
-        if marker.state.is_none() {
-            marker.state = Some(ScreenDiagsState {
-                last_time: now,
-                frame_count: 0,
-            });
-        }
-    }
+    };
 }
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
