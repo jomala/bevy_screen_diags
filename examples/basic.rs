@@ -2,14 +2,15 @@
 //! for a blank screen.
 
 use bevy::prelude::*;
+
 use bevy_screen_diags::ScreenDiagsPlugin;
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         // Include the plugin
         .add_plugin(ScreenDiagsPlugin::default())
-        .add_startup_system(setup.system())
+        .add_startup_system(setup)
         .run();
 }
 

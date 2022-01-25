@@ -13,15 +13,15 @@ pub struct ScreenDiagsPlugin {
 }
 
 impl Plugin for ScreenDiagsPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(self.settings.clone())
-            .add_startup_system(setup.system())
-            .add_system(update.system());
+    fn build(&self, app: &mut App) {
+        app.insert_resource(self.settings)
+            .add_startup_system(setup)
+            .add_system(update);
     }
 }
 
 /// The settings
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ScreenDiagsSettings {
     /// The interval between screen updates. A balance between being responsive
     /// and easy to read. Defaults to 1 second.
@@ -41,13 +41,13 @@ impl Default for ScreenDiagsSettings {
 }
 
 /// The marker for the text to be updated, and the container for the state
-#[derive(Debug, Default, Clone)]
+#[derive(Component, Debug, Default, Copy, Clone)]
 struct ScreenDiagsText {
     state: Option<ScreenDiagsState>,
 }
 
 /// The state to be updated
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Copy, Clone)]
 struct ScreenDiagsState {
     last_time: Instant,
     frame_count: u32,
@@ -105,7 +105,7 @@ fn setup(mut commands: Commands, mut assets: ResMut<Assets<Font>>) {
                     font_size: 32.0,
                     color: Color::WHITE,
                 },
-                TextAlignment::default()
+                TextAlignment::default(),
             ),
             ..Default::default()
         })
