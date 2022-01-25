@@ -97,7 +97,7 @@ fn setup(mut commands: Commands, mut assets: ResMut<Assets<Font>>) {
                 TextStyle {
                     font,
                     font_size: 32.0,
-                    color: Color::WHITE,
+                    color: Color::RED,
                 },
                 TextAlignment::default(),
             ),
