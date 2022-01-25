@@ -7,15 +7,11 @@ use bevy::{
 };
 
 /// The plugin
-#[derive(Debug, Default, Clone)]
-pub struct ScreenDiagsPlugin {
-    /// The configurable settings for the plugin.
-    pub settings: ScreenDiagsSettings,
-}
+pub struct ScreenDiagsPlugin;
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(self.settings)
+        app.insert_resource(ScreenDiagsSettings::default())
             .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_startup_system(setup)
             .add_system(update);

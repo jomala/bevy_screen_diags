@@ -10,9 +10,9 @@ bevy_screen_diags = "*"
 Include the plugin when you build your `App`.
 ```
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(bevy_screen_diags::ScreenDiagsPlugin::default())
+        .add_plugin(bevy_screen_diags::ScreenDiagsPlugin)
         :
         :
 }

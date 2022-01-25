@@ -9,7 +9,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Include the plugin
-        .add_plugin(ScreenDiagsPlugin::default())
+        .add_plugin(ScreenDiagsPlugin)
         .add_startup_system(setup)
         .run();
 }
