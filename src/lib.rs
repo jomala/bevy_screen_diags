@@ -79,7 +79,7 @@ fn format_fps(s: &mut String, fps: f64) {
     s.clear();
     // SAFETY: Writing to a String never fails
     unsafe {
-        write!(s, "{:4.0}", fps).unwrap_unchecked();
+        write!(s, "{:.2}", fps).unwrap_unchecked();
     }
 }
 
