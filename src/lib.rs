@@ -1,9 +1,11 @@
 //! A simple library to provide an on-screen FPS display for Bevy projects.
 
+use std::fmt::Write;
+
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
-    utils::{Duration, Instant},
+    utils::Duration,
 };
 
 /// The plugin
@@ -11,98 +13,120 @@ pub struct ScreenDiagsPlugin;
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ScreenDiagsSettings::default())
-            .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        app.add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_startup_system(setup)
             .add_system(update);
     }
 }
 
-/// The settings
-#[derive(Debug, Copy, Clone)]
-pub struct ScreenDiagsSettings {
-    /// The interval between screen updates. A balance between being responsive
-    /// and easy to read. Defaults to 1 second.
-    pub interval: Duration,
-    /// Whether the FPS display is enabled.  Any change in status
-    /// will be responded to at the end of the `interval`. Defaults to true.
-    pub enabled: bool,
+/// The marker component for our FPS update interval timer.
+///
+/// To disable this plugin, pause the timer.
+#[derive(Component)]
+pub struct ScreenDiagsTimer {
+    text_entity: Option<Entity>,
 }
 
-impl Default for ScreenDiagsSettings {
-    fn default() -> Self {
-        ScreenDiagsSettings {
-            interval: Duration::from_secs(1),
-            enabled: true,
-        }
-    }
-}
-
-/// The marker for the text to be updated, and the container for the state
-#[derive(Component, Debug, Default, Copy, Clone)]
-struct ScreenDiagsText {
-    state: Option<ScreenDiagsState>,
-}
-
-/// The state to be updated
-#[derive(Debug, Copy, Clone)]
-struct ScreenDiagsState {
-    last_time: Instant,
-}
+#[derive(Component)]
+struct ScreenDiagsText;
 
 fn update(
     time: Res<Time>,
     diagnostics: Res<Diagnostics>,
-    settings: Res<ScreenDiagsSettings>,
-    mut query: Query<(&mut Text, &mut ScreenDiagsText)>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+    mut timer_query: Query<(&mut ScreenDiagsTimer, &mut Timer)>,
+    mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
+    let (mut marker, mut timer) = timer_query.single_mut();
+    if timer.paused() {
+        if let Some(entity) = marker.text_entity {
+            commands.entity(entity).despawn_recursive();
+            marker.text_entity = None;
+        }
+        return;
+    } else if marker.text_entity.is_none() {
+        marker.text_entity = Some(spawn_text(
+            &mut commands,
+            asset_server,
+            extract_fps(diagnostics).map(|fps| {
+                let mut buffer = String::new();
+                format_fps(&mut buffer, fps);
+                buffer
+            }),
+        ));
+        return;
+    } else if !timer.tick(time.delta()).just_finished() {
+        return;
+    }
+
+    if let Some(fps) = extract_fps(diagnostics) {
+        let mut text = text_query.single_mut();
+        format_fps(&mut text.sections[1].value, fps);
+    }
+}
+
+fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         if let Some(average) = fps.average() {
-            for (mut text, mut marker) in query.iter_mut() {
-                let now: Instant = time.last_update().unwrap_or_else(|| time.startup());
-                if let Some(state) = marker.state.as_mut() {
-                    let so_far = now - state.last_time;
-                    if so_far > settings.interval {
-                        text.sections[0].value = if settings.enabled {
-                            format!("FPS: {:4.0}", average)
-                        } else {
-                            "".to_owned()
-                        };
-
-                        marker.state = None;
-                    }
-                } else {
-                    marker.state = Some(ScreenDiagsState { last_time: now });
-                }
-            }
+            return Some(average);
         }
-    };
+    }
+    None
+}
+
+fn format_fps(s: &mut String, fps: f64) {
+    s.clear();
+    // SAFETY: Writing to a String never fails
+    unsafe {
+        write!(s, "{:4.0}", fps).unwrap_unchecked();
+    }
 }
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
-fn setup(mut commands: Commands, mut assets: ResMut<Assets<Font>>) {
-    // The font file to use is included in this crate so you don't need to access the file at runtime.
-    // Here we load it as an asset.
-    let font_bytes = include_bytes!("../assets/fonts/FiraSans-Bold.ttf").to_vec();
-    let font_struct = Font::try_from_bytes(font_bytes).expect("Font should be present and valid");
-    let font = assets.add(font_struct);
-
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // The UI camera is required to show the text. It can coexist with other cameras.
     commands.spawn_bundle(UiCameraBundle::default());
-    // The text is not currently configurable, but could be.
+    let entity = spawn_text(&mut commands, asset_server, None);
+    commands.spawn_bundle((
+        ScreenDiagsTimer {
+            text_entity: Some(entity),
+        },
+        Timer::new(Duration::from_secs(1), true),
+    ));
+}
+
+fn spawn_text(
+    commands: &mut Commands,
+    asset_server: Res<AssetServer>,
+    fps: Option<String>,
+) -> Entity {
+    let handle = asset_server.load("fonts/screen-diags-FiraSans-Bold.ttf");
     commands
         .spawn_bundle(TextBundle {
-            text: Text::with_section(
-                "FPS: ...",
-                TextStyle {
-                    font,
-                    font_size: 32.0,
-                    color: Color::RED,
-                },
-                TextAlignment::default(),
-            ),
+            text: Text {
+                sections: vec![
+                    TextSection {
+                        value: "FPS: ".to_string(),
+                        style: TextStyle {
+                            font: handle.clone(),
+                            font_size: 32.0,
+                            color: Color::RED,
+                        },
+                    },
+                    TextSection {
+                        value: fps.unwrap_or_else(|| "...".to_string()),
+                        style: TextStyle {
+                            font: handle,
+                            font_size: 32.0,
+                            color: Color::RED,
+                        },
+                    },
+                ],
+                ..Default::default()
+            },
             ..Default::default()
         })
-        // The state is not set up initially. This is to avoid the start-up time being counted as the first frame.
-        .insert(ScreenDiagsText::default());
+        .insert(ScreenDiagsText)
+        .id()
 }
