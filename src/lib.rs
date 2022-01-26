@@ -101,7 +101,7 @@ fn spawn_text(
     asset_server: Res<AssetServer>,
     fps: Option<String>,
 ) -> Entity {
-    let handle = asset_server.load("fonts/screen-diags-FiraSans-Bold.ttf");
+    let handle = asset_server.load("fonts/screen-diags-font.ttf");
     commands
         .spawn_bundle(TextBundle {
             text: Text {
