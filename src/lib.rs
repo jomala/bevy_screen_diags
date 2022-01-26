@@ -85,8 +85,6 @@ fn format_fps(s: &mut String, fps: f64) {
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // The UI camera is required to show the text. It can coexist with other cameras.
-    commands.spawn_bundle(UiCameraBundle::default());
     let entity = spawn_text(&mut commands, asset_server, None);
     commands.spawn_bundle((
         ScreenDiagsTimer {
