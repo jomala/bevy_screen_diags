@@ -15,7 +15,7 @@ bevy_screen_diags = "*"
 
 Include the plugin when you build your `App`.
 
-```
+```rust
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
