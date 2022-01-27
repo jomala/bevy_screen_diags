@@ -1,6 +1,6 @@
 # Bevy diagnostics overlay
 
-[![Crates.io](https://img.shields.io/crates/v/bevy_prototype_lyon)](https://crates.io/crates/bevy_prototype_lyon)
+[![Crates.io](https://img.shields.io/crates/v/bevy_screen_diags)](https://crates.io/crates/bevy_screen_diags)
 [![Bevy tracking](https://img.shields.io/badge/Bevy%20tracking-released%20version-lightblue)](https://github.com/bevyengine/bevy/blob/main/docs/plugins_guidelines.md#main-branch-tracking)
 
 `bevy_screen_diags` adds a very simple frames-per-second (FPS) display to your screen in Bevy.
