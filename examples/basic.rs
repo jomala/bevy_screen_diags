@@ -1,4 +1,4 @@
-//! This example illustrates how to enable and disable the FPS text in the upper left hand corner
+//! This example illustrates how to enable and disable the FPS text in the bottom left hand corner
 //! for a blank screen.
 
 use bevy::prelude::*;

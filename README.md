@@ -1,14 +1,21 @@
-Adds a very simple frames-per-second (FPS) display to your screen in Bevy.
+# Bevy diagnostics overlay
 
-*Inspired by the Bevy example `ui/text.rs`.*
+[![Crates.io](https://img.shields.io/crates/v/bevy_screen_diags)](https://crates.io/crates/bevy_screen_diags)
+[![Bevy tracking](https://img.shields.io/badge/Bevy%20tracking-released%20version-lightblue)](https://github.com/bevyengine/bevy/blob/main/docs/plugins_guidelines.md#main-branch-tracking)
+
+`bevy_screen_diags` adds a very simple frames-per-second (FPS) display to your screen in Bevy.
+
+## Usage
 
 Put the crate into your `Cargo.toml`.
-```
+
+```toml
 bevy_screen_diags = "*"
 ```
 
 Include the plugin when you build your `App`.
-```
+
+```rust
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -22,8 +29,6 @@ Put the font you want to use in `assets/fonts/screen-diags-font.ttf`. If you wan
 the font at that path in this project (which is FiraSans-Bold).
 
 ![Example screen showing the FPS](docs/fps.png)
-
-There are configuration options but you probably don't want them.
 
 The `basic` example just shows the FPS count on a grey background, but you can click your mouse on
 the window to add or remove the display.

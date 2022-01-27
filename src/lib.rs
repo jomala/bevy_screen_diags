@@ -1,4 +1,8 @@
-//! A simple library to provide an on-screen FPS display for Bevy projects.
+#![deny(missing_docs)]
+
+//! Add a diagnostics overlay (with an FPS counter) in Bevy.
+//!
+//! This crate provides a Bevy [plugin](ScreenDiagsPlugin) to add the diagnostics overlay.
 
 use std::fmt::Write;
 
@@ -8,7 +12,9 @@ use bevy::{
     utils::Duration,
 };
 
-/// The plugin
+/// A plugin that draws diagnostics on-screen with Bevy UI.
+///
+/// Use our [marker struct](ScreenDiagsTimer) to manage the FPS counter.
 pub struct ScreenDiagsPlugin;
 
 impl Plugin for ScreenDiagsPlugin {
@@ -21,7 +27,8 @@ impl Plugin for ScreenDiagsPlugin {
 
 /// The marker component for our FPS update interval timer.
 ///
-/// To disable this plugin, pause the timer.
+/// To disable the FPS counter, write a query for a [Timer](bevy::prelude::Timer) filtered by this
+/// struct and pause the timer. Unpause the timer to re-enable the counter.
 #[derive(Component)]
 pub struct ScreenDiagsTimer {
     text_entity: Option<Entity>,
