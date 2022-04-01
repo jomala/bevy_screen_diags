@@ -47,30 +47,40 @@ fn update(
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
     let (mut marker, mut timer) = timer_query.single_mut();
-    if timer.paused() {
-        if let Some(entity) = marker.text_entity {
-            commands.entity(entity).despawn_recursive();
-            marker.text_entity = None;
-        }
-        return;
-    } else if marker.text_entity.is_none() {
-        marker.text_entity = Some(spawn_text(
-            &mut commands,
-            asset_server,
-            extract_fps(diagnostics).map(|fps| {
-                let mut buffer = String::new();
-                format_fps(&mut buffer, fps);
-                buffer
-            }),
-        ));
-        return;
-    } else if !timer.tick(time.delta()).just_finished() {
-        return;
-    }
 
-    if let Some(fps) = extract_fps(diagnostics) {
-        let mut text = text_query.single_mut();
-        format_fps(&mut text.sections[1].value, fps);
+    match marker.text_entity {
+        // Overlay is disabled and has already been despawned - do nothing.
+        None if timer.paused() => {}
+
+        // Overlay has just been enabled but doesn't exist yet - should spawn it.
+        None => {
+            marker.text_entity = Some(spawn_text(
+                &mut commands,
+                asset_server,
+                extract_fps(diagnostics).map(|fps| {
+                    let mut buffer = String::new();
+                    format_fps(&mut buffer, fps);
+                    buffer
+                }),
+            ));
+        }
+
+        // Overlay has just been disabled, but still exists - should despawn it.
+        Some(text_entity) if timer.paused() => {
+            commands.entity(text_entity).despawn_recursive();
+            marker.text_entity.take();
+        }
+
+        // Overlay is enabled and exists, but UPDATE_INTERVAL hasn't passed yet - do nothing.
+        Some(_) if !timer.tick(time.delta()).just_finished() => {}
+
+        // Overlay is enabled and exists, and UPDATE_INTERVAL has passed - try to update it.
+        Some(_) => {
+            if let Some(fps) = extract_fps(diagnostics) {
+                let mut text = text_query.single_mut();
+                format_fps(&mut text.sections[1].value, fps);
+            }
+        }
     }
 }
 
