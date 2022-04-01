@@ -75,12 +75,9 @@ fn update(
 }
 
 fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
-    if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
-        if let Some(average) = fps.average() {
-            return Some(average);
-        }
-    }
-    None
+    diagnostics
+        .get(FrameTimeDiagnosticsPlugin::FPS)
+        .map(|fps| fps.average().unwrap_or_default())
 }
 
 fn format_fps(buffer: &mut String, fps: f64) {
