@@ -9,6 +9,10 @@ use bevy::{
     utils::Duration,
 };
 
+const FONT_SIZE: f32 = 32.0;
+const FONT_COLOR: Color = Color::RED;
+const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
+
 /// A plugin that draws diagnostics on-screen with Bevy UI.
 ///
 /// Use our [marker struct](ScreenDiagsTimer) to manage the FPS counter.
@@ -90,7 +94,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ScreenDiagsTimer {
             text_entity: Some(entity),
         },
-        Timer::new(Duration::from_secs(1), true),
+        Timer::new(UPDATE_INTERVAL, true),
     ));
 }
 
@@ -108,16 +112,16 @@ fn spawn_text(
                         value: "FPS: ".to_string(),
                         style: TextStyle {
                             font: handle.clone(),
-                            font_size: 32.0,
-                            color: Color::RED,
+                            font_size: FONT_SIZE,
+                            color: FONT_COLOR,
                         },
                     },
                     TextSection {
                         value: fps.unwrap_or_else(|| "...".to_string()),
                         style: TextStyle {
                             font: handle,
-                            font_size: 32.0,
-                            color: Color::RED,
+                            font_size: FONT_SIZE,
+                            color: FONT_COLOR,
                         },
                     },
                 ],
