@@ -17,18 +17,32 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_startup_system(setup)
-            .add_system(update);
+            .add_system(update)
+            .init_resource::<ScreenDiagsState>();
     }
 }
 
-/// The marker component for our FPS update interval timer.
+/// The diagnostics state resource.
 ///
-/// To disable the FPS counter, write a query for a [Timer](bevy::prelude::Timer) filtered by this
-/// struct and pause the timer. Unpause the timer to re-enable the counter.
-#[derive(Component)]
-pub struct ScreenDiagsTimer {
+/// To disable the FPS counter, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
+/// pause the timer. Unpause the timer to re-enable the counter.
+pub struct ScreenDiagsState {
+    /// The timer that triggers a diagnostics reading.
+    pub timer: Timer,
     text_entity: Option<Entity>,
+    /// Ignore the timer until we get an FPS reading (which will be the second frame after
+    /// diagnostics are initialized).
+    fps_initialized: bool,
+}
+
+impl Default for ScreenDiagsState {
+    fn default() -> Self {
+        Self {
+            timer: Timer::new(Duration::from_secs(1), true),
+            text_entity: None,
+            fps_initialized: false,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -38,33 +52,41 @@ fn update(
     time: Res<Time>,
     diagnostics: Res<Diagnostics>,
     asset_server: Res<AssetServer>,
+    state: Option<ResMut<ScreenDiagsState>>,
     mut commands: Commands,
-    mut timer_query: Query<(&mut ScreenDiagsTimer, &mut Timer)>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
-    let (mut marker, mut timer) = timer_query.single_mut();
-    if timer.paused() {
-        if let Some(entity) = marker.text_entity {
+    let mut state = match state {
+        Some(s) => s,
+        None => return,
+    };
+
+    if state.timer.paused() {
+        if let Some(entity) = state.text_entity {
             commands.entity(entity).despawn_recursive();
-            marker.text_entity = None;
+            state.text_entity = None;
         }
         return;
-    } else if marker.text_entity.is_none() {
-        marker.text_entity = Some(spawn_text(
+    } else if state.text_entity.is_none() {
+        state.text_entity = Some(spawn_text(
             &mut commands,
             asset_server,
             extract_fps(diagnostics).map(|fps| {
+                state.fps_initialized = true;
+
                 let mut buffer = String::new();
                 format_fps(&mut buffer, fps);
                 buffer
             }),
         ));
         return;
-    } else if !timer.tick(time.delta()).just_finished() {
+    } else if !state.timer.tick(time.delta()).just_finished() && state.fps_initialized {
         return;
     }
 
     if let Some(fps) = extract_fps(diagnostics) {
+        state.fps_initialized = true;
+
         let mut text = text_query.single_mut();
         format_fps(&mut text.sections[1].value, fps);
     }
@@ -81,17 +103,6 @@ fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
 
 fn format_fps(buffer: &mut String, fps: f64) {
     *buffer = format!("{:.0}", fps);
-}
-
-/// Set up the UI camera, the text element and, attached to it, the plugin state.
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let entity = spawn_text(&mut commands, asset_server, None);
-    commands.spawn_bundle((
-        ScreenDiagsTimer {
-            text_entity: Some(entity),
-        },
-        Timer::new(Duration::from_secs(1), true),
-    ));
 }
 
 fn spawn_text(

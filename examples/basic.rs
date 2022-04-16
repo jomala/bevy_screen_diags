@@ -3,7 +3,7 @@
 
 use bevy::prelude::*;
 
-use bevy_screen_diags::{ScreenDiagsPlugin, ScreenDiagsTimer};
+use bevy_screen_diags::{ScreenDiagsPlugin, ScreenDiagsState};
 
 fn main() {
     App::new()
@@ -23,14 +23,13 @@ fn setup(mut commands: Commands) {
 
 fn mouse_handler(
     mouse_button_input: Res<Input<MouseButton>>,
-    mut query: Query<&mut Timer, With<ScreenDiagsTimer>>,
+    mut diags_state: ResMut<ScreenDiagsState>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
-        let mut timer = query.single_mut();
-        if timer.paused() {
-            timer.unpause();
+        if diags_state.timer.paused() {
+            diags_state.timer.unpause();
         } else {
-            timer.pause();
+            diags_state.timer.pause();
         }
     }
 }
