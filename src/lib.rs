@@ -84,10 +84,7 @@ fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
 
 fn format_fps(s: &mut String, fps: f64) {
     s.clear();
-    // SAFETY: Writing to a String never fails
-    unsafe {
-        write!(s, "{:.0}", fps).unwrap_unchecked();
-    }
+    write!(s, "{:.0}", fps).unwrap();
 }
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
