@@ -3,6 +3,9 @@
 //! Add a diagnostics overlay (with an FPS counter) in Bevy.
 //!
 //! This crate provides a Bevy [plugin](ScreenDiagsPlugin) to add the diagnostics overlay.
+
+use std::fmt::Write;
+
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -90,8 +93,9 @@ fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
         .map(|fps| fps.average().unwrap_or_default())
 }
 
-fn format_fps(buffer: &mut String, fps: f64) {
-    *buffer = format!("{:.0}", fps);
+fn format_fps(s: &mut String, fps: f64) {
+    s.clear();
+    write!(s, "{:.0}", fps).unwrap();
 }
 
 /// Set up the UI camera, the text element and, attached to it, the plugin state.
