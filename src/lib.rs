@@ -17,8 +17,11 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+            .insert_resource(Timer::new(Duration::from_secs(1), true))
             .add_startup_system(setup)
-            .add_system(update);
+            .add_system(update)
+            ;
+           
     }
 }
 
@@ -39,10 +42,13 @@ fn update(
     diagnostics: Res<Diagnostics>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
-    mut timer_query: Query<(&mut ScreenDiagsTimer, &mut Timer)>,
+    mut timer_query: Query<&mut ScreenDiagsTimer>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
+    mut timer: ResMut<Timer>,
 ) {
-    let (mut marker, mut timer) = timer_query.single_mut();
+  
+    let mut marker = timer_query.single_mut();
+  
     if timer.paused() {
         if let Some(entity) = marker.text_entity {
             commands.entity(entity).despawn_recursive();
@@ -90,8 +96,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ScreenDiagsTimer {
             text_entity: Some(entity),
         },
-        Timer::new(Duration::from_secs(1), true),
-    ));
+    )
+    );
 }
 
 fn spawn_text(

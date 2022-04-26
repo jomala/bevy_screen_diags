@@ -23,10 +23,11 @@ fn setup(mut commands: Commands) {
 
 fn mouse_handler(
     mouse_button_input: Res<Input<MouseButton>>,
-    mut query: Query<&mut Timer, With<ScreenDiagsTimer>>,
+    mut query: Query<&mut ScreenDiagsTimer>,
+    mut timer: ResMut<Timer>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
-        let mut timer = query.single_mut();
+        //let mut timer = query.single_mut();
         if timer.paused() {
             timer.unpause();
         } else {
