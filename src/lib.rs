@@ -12,6 +12,10 @@ use bevy::{
     utils::Duration,
 };
 
+const FONT_SIZE: f32 = 32.0;
+const FONT_COLOR: Color = Color::RED;
+const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
+
 /// A plugin that draws diagnostics on-screen with Bevy UI.
 ///
 /// Use our [marker struct](ScreenDiagsTimer) to manage the FPS counter.
@@ -41,7 +45,7 @@ pub struct ScreenDiagsState {
 impl Default for ScreenDiagsState {
     fn default() -> Self {
         Self {
-            timer: Timer::new(Duration::from_secs(1), true),
+            timer: Timer::new(UPDATE_INTERVAL, true),
             text_entity: None,
             fps_initialized: false,
         }
@@ -96,12 +100,9 @@ fn update(
 }
 
 fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
-    if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
-        if let Some(average) = fps.average() {
-            return Some(average);
-        }
-    }
-    None
+    diagnostics
+        .get(FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|fps| fps.average())
 }
 
 fn format_fps(s: &mut String, fps: f64) {
@@ -123,16 +124,16 @@ fn spawn_text(
                         value: "FPS: ".to_string(),
                         style: TextStyle {
                             font: handle.clone(),
-                            font_size: 32.0,
-                            color: Color::RED,
+                            font_size: FONT_SIZE,
+                            color: FONT_COLOR,
                         },
                     },
                     TextSection {
                         value: fps.unwrap_or_else(|| "...".to_string()),
                         style: TextStyle {
                             font: handle,
-                            font_size: 32.0,
-                            color: Color::RED,
+                            font_size: FONT_SIZE,
+                            color: FONT_COLOR,
                         },
                     },
                 ],
