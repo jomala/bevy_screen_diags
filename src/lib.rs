@@ -15,6 +15,10 @@ use bevy::{
 const FONT_SIZE: f32 = 32.0;
 const FONT_COLOR: Color = Color::RED;
 const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
+const STRING_FORMAT: &'static str = "FPS: ";
+const STRING_INITIAL: &'static str = "FPS: ...";
+const STRING_MISSING: &'static str = "FPS: ???";
+const STRING_DISABLED: &'static str = "";
 
 /// A plugin that draws diagnostics on-screen with Bevy UI.
 ///
@@ -24,6 +28,7 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+            .add_startup_system(spawn_text)
             .add_system(update)
             .init_resource::<ScreenDiagsState>();
     }
@@ -36,18 +41,12 @@ impl Plugin for ScreenDiagsPlugin {
 pub struct ScreenDiagsState {
     /// The timer that triggers a diagnostics reading.
     pub timer: Timer,
-    text_entity: Option<Entity>,
-    /// Ignore the timer until we get an FPS reading (which will be the second frame after
-    /// diagnostics are initialized).
-    fps_initialized: bool,
 }
 
 impl Default for ScreenDiagsState {
     fn default() -> Self {
         Self {
             timer: Timer::new(UPDATE_INTERVAL, true),
-            text_entity: None,
-            fps_initialized: false,
         }
     }
 }
@@ -58,80 +57,54 @@ struct ScreenDiagsText;
 fn update(
     time: Res<Time>,
     diagnostics: Res<Diagnostics>,
-    asset_server: Res<AssetServer>,
-    state: Option<ResMut<ScreenDiagsState>>,
-    mut commands: Commands,
+    state_resource: Option<ResMut<ScreenDiagsState>>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
-    let mut state = match state {
-        Some(s) => s,
-        None => return,
-    };
+    if let Some(mut state) = state_resource {
+        if state.timer.paused() {
+            // Time is paused so remove text
+            for mut text in text_query.iter_mut() {
+                let value = &mut text.sections[0].value;
+                    value.clear();
+                write!(value, "{}", STRING_DISABLED).unwrap();
+            }
+        } else if !state.timer.tick(time.delta()).just_finished() {
+            let fps_diags = extract_fps(&diagnostics);
 
-    if state.timer.paused() {
-        if let Some(entity) = state.text_entity {
-            commands.entity(entity).despawn_recursive();
-            state.text_entity = None;
+            for mut text in text_query.iter_mut() {
+                let value = &mut text.sections[0].value;
+                    value.clear();
+
+                if let Some(fps) = fps_diags {
+                    write!(value, "{}{:.0}", STRING_FORMAT, fps).unwrap();
+                } else {
+                    value.clear();
+                    write!(value, "{}", STRING_MISSING).unwrap();
+                }
+            }
         }
-        return;
-    } else if state.text_entity.is_none() {
-        state.text_entity = Some(spawn_text(
-            &mut commands,
-            asset_server,
-            extract_fps(diagnostics).map(|fps| {
-                state.fps_initialized = true;
-
-                let mut buffer = String::new();
-                format_fps(&mut buffer, fps);
-                buffer
-            }),
-        ));
-        return;
-    } else if !state.timer.tick(time.delta()).just_finished() && state.fps_initialized {
-        return;
-    }
-
-    if let Some(fps) = extract_fps(diagnostics) {
-        state.fps_initialized = true;
-
-        let mut text = text_query.single_mut();
-        format_fps(&mut text.sections[1].value, fps);
     }
 }
 
-fn extract_fps(diagnostics: Res<Diagnostics>) -> Option<f64> {
+fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
 }
 
-fn format_fps(s: &mut String, fps: f64) {
-    s.clear();
-    write!(s, "{:.0}", fps).unwrap();
-}
-
 fn spawn_text(
-    commands: &mut Commands,
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
-    fps: Option<String>,
-) -> Entity {
+) {
     let handle = asset_server.load("fonts/screen-diags-font.ttf");
     commands
         .spawn_bundle(TextBundle {
             text: Text {
                 sections: vec![
                     TextSection {
-                        value: "FPS: ".to_string(),
+                        value: STRING_INITIAL.to_string(),
                         style: TextStyle {
                             font: handle.clone(),
-                            font_size: FONT_SIZE,
-                            color: FONT_COLOR,
-                        },
-                    },
-                    TextSection {
-                        value: fps.unwrap_or_else(|| "...".to_string()),
-                        style: TextStyle {
-                            font: handle,
                             font_size: FONT_SIZE,
                             color: FONT_COLOR,
                         },
@@ -141,6 +114,5 @@ fn spawn_text(
             },
             ..Default::default()
         })
-        .insert(ScreenDiagsText)
-        .id()
+        .insert(ScreenDiagsText);
 }
