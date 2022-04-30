@@ -26,10 +26,10 @@ fn mouse_handler(
     mut diags_state: ResMut<ScreenDiagsState>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {
-        if diags_state.timer.paused() {
-            diags_state.timer.unpause();
+        if diags_state.enabled() {
+            diags_state.disable();
         } else {
-            diags_state.timer.pause();
+            diags_state.enable();
         }
     }
 }
