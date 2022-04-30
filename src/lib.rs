@@ -17,7 +17,6 @@ const FONT_COLOR: Color = Color::RED;
 const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
 
 const STRING_FORMAT: &str = "FPS: ";
-const STRING_INITIAL: &str = "FPS: ...";
 const STRING_MISSING: &str = "FPS: ???";
 
 /// A plugin that draws diagnostics on-screen with Bevy UI.
@@ -68,7 +67,7 @@ impl ScreenDiagsState {
     /// Disable the FPS display.
     pub fn disable(&mut self) {
         self.timer.pause();
-        self.update_now = true;
+        self.update_now = false;
     }
 
     /// Is the FPS display enabled.
@@ -88,26 +87,23 @@ fn update(
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
     if let Some(mut state) = state_resource {
-        if state.update_now || state.timer.tick(time.delta()).just_finished() {
-            if state.timer.paused() {
-                // Time is paused so remove text
-                for mut text in text_query.iter_mut() {
-                    let value = &mut text.sections[0].value;
-                    value.clear();
-                }
-            } else {
-                let fps_diags = extract_fps(&diagnostics);
+        if state.timer.paused() {
+            // Timer is paused so remove text
+            for mut text in text_query.iter_mut() {
+                text.sections[0].value.clear();
+            }
+        } else if state.update_now || state.timer.tick(time.delta()).just_finished() {
+            let fps_diags = extract_fps(&diagnostics);
 
-                for mut text in text_query.iter_mut() {
-                    let value = &mut text.sections[0].value;
-                    value.clear();
+            for mut text in text_query.iter_mut() {
+                let value = &mut text.sections[0].value;
+                value.clear();
 
-                    if let Some(fps) = fps_diags {
-                        write!(value, "{}{:.0}", STRING_FORMAT, fps).unwrap();
-                    } else {
-                        value.clear();
-                        write!(value, "{}", STRING_MISSING).unwrap();
-                    }
+                if let Some(fps) = fps_diags {
+                    state.update_now = false;
+                    write!(value, "{}{:.0}", STRING_FORMAT, fps).unwrap();
+                } else {
+                    write!(value, "{}", STRING_MISSING).unwrap();
                 }
             }
         }
@@ -126,7 +122,7 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(TextBundle {
             text: Text {
                 sections: vec![TextSection {
-                    value: STRING_INITIAL.to_string(),
+                    value: String::new(),
                     style: TextStyle {
                         font,
                         font_size: FONT_SIZE,
