@@ -67,7 +67,7 @@ impl ScreenDiagsState {
     /// Disable the FPS display.
     pub fn disable(&mut self) {
         self.timer.pause();
-        self.update_now = false;
+        self.update_now = true;
     }
 
     /// Is the FPS display enabled.
@@ -87,11 +87,12 @@ fn update(
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
     if let Some(mut state) = state_resource {
-        if state.timer.paused() {
+        if state.update_now && state.timer.paused() {
             // Timer is paused so remove text
             for mut text in text_query.iter_mut() {
                 text.sections[0].value.clear();
             }
+            state.update_now = false;
         } else if state.update_now || state.timer.tick(time.delta()).just_finished() {
             let fps_diags = extract_fps(&diagnostics);
 
