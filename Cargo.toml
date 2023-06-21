@@ -12,4 +12,4 @@ repository = "https://github.com/jomala/bevy_screen_diags/"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.10.1", default-features = false, features = ["render", "bevy_winit", "x11"] }
+bevy = version = "0.10.1"
