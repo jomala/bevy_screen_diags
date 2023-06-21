@@ -40,6 +40,7 @@ impl Plugin for ScreenDiagsPlugin {
 ///
 /// To disable the FPS counter, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
 /// pause the timer. Unpause the timer to re-enable the counter.
+#[derive(Resource)]
 pub struct ScreenDiagsState {
     /// The timer that triggers a diagnostics reading.
     /// Public, to allow flexible use, but in general use the methods to interact.
