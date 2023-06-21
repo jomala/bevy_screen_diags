@@ -53,7 +53,7 @@ pub struct ScreenDiagsState {
 impl Default for ScreenDiagsState {
     fn default() -> Self {
         Self {
-            timer: Timer::new(UPDATE_INTERVAL, true),
+            timer: Timer::new(UPDATE_INTERVAL, TimerMode::Repeating),
             update_now: true,
         }
     }
@@ -115,6 +115,7 @@ fn update(
     }
 }
 
+/// Get the current fps
 pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
@@ -124,7 +125,7 @@ pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
 fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             text: Text {
                 sections: vec![TextSection {
                     value: STRING_INITIAL.to_string(),
