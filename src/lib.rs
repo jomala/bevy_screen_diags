@@ -114,7 +114,7 @@ fn update(
     }
 }
 
-fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
+pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
