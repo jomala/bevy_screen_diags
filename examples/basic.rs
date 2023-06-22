@@ -3,13 +3,13 @@
 
 use bevy::prelude::*;
 
-use bevy_screen_diags::{ScreenDiagsPlugin, ScreenDiagsState};
+use bevy_screen_diags::{ScreenDiagsState, ScreenDiagsTextPlugin};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Include the plugin
-        .add_plugin(ScreenDiagsPlugin)
+        .add_plugin(ScreenDiagsTextPlugin)
         .add_startup_system(setup)
         .add_system(mouse_handler)
         .run();
@@ -17,8 +17,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     // Add further cameras to test that they interoperate with the one in the plugin.
-    commands.spawn_bundle(PerspectiveCameraBundle::default());
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn mouse_handler(

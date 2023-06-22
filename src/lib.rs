@@ -134,8 +134,7 @@ pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
         .and_then(|fps| fps.average())
 }
 
-/// Spawns text
-pub fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands
         .spawn(TextBundle {

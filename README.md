@@ -10,7 +10,7 @@
 Put the crate into your `Cargo.toml`.
 
 ```toml
-bevy_screen_diags = "*"
+bevy_screen_diags = "0.5.2"
 ```
 
 Include the plugin when you build your `App`.
@@ -19,7 +19,7 @@ Include the plugin when you build your `App`.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(bevy_screen_diags::ScreenDiagsPlugin)
+        .add_plugin(bevy_screen_diags::ScreenDiagsTextPlugin)
         //If a UI camera is already in your game remove the next line
         .add_startup_system(|mut commands: Commands| {commands.spawn_bundle(UiCameraBundle::default());})
         :
