@@ -30,9 +30,21 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_startup_system(spawn_text)
-            .add_system(update)
             .init_resource::<ScreenDiagsState>();
+    }
+}
+
+/// A plugin to write the FPS counter to the screen
+///
+/// Use the [marker struct](ScreenDiagsText) to customise the FPS counter appearance,
+/// and the [resource](ScreenDiagsState) to control its behaviour.
+pub struct ScreenDiagsTextPlugin;
+
+impl Plugin for ScreenDiagsTextPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(ScreenDiagsPlugin)
+            .add_startup_system(spawn_text)
+            .add_system(update);
     }
 }
 
@@ -40,6 +52,7 @@ impl Plugin for ScreenDiagsPlugin {
 ///
 /// To disable the FPS counter, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
 /// pause the timer. Unpause the timer to re-enable the counter.
+#[derive(Resource)]
 pub struct ScreenDiagsState {
     /// The timer that triggers a diagnostics reading.
     /// Public, to allow flexible use, but in general use the methods to interact.
@@ -52,7 +65,7 @@ pub struct ScreenDiagsState {
 impl Default for ScreenDiagsState {
     fn default() -> Self {
         Self {
-            timer: Timer::new(UPDATE_INTERVAL, true),
+            timer: Timer::new(UPDATE_INTERVAL, TimerMode::Repeating),
             update_now: true,
         }
     }
@@ -114,7 +127,8 @@ fn update(
     }
 }
 
-fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
+/// Get the current fps
+pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
@@ -123,7 +137,7 @@ fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
 fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             text: Text {
                 sections: vec![TextSection {
                     value: STRING_INITIAL.to_string(),
