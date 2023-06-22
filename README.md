@@ -21,9 +21,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(bevy_screen_diags::ScreenDiagsTextPlugin)
         //If a UI camera is already in your game remove the next line
-        .add_startup_system(|mut commands: Commands| {commands.spawn_bundle(UiCameraBundle::default());})
-        :
-        :
+        .add_startup_system(|mut commands: Commands| {
+            commands.spawn_bundle(UiCameraBundle::default());
+        });
 }
 ```
 
