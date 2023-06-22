@@ -30,9 +30,21 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_startup_system(spawn_text)
-            .add_system(update)
             .init_resource::<ScreenDiagsState>();
+    }
+}
+
+/// A plugin to write the FPS counter to the screen
+///
+/// Use the [marker struct](ScreenDiagsText) to customise the FPS counter appearance,
+/// and the [resource](ScreenDiagsState) to control its behaviour.
+pub struct ScreenDiagsTextPlugin;
+
+impl Plugin for ScreenDiagsTextPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(ScreenDiagsPlugin)
+            .add_startup_system(spawn_text)
+            .add_system(update);
     }
 }
 
@@ -122,7 +134,8 @@ pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
         .and_then(|fps| fps.average())
 }
 
-fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
+/// Spawns text
+pub fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands
         .spawn(TextBundle {
