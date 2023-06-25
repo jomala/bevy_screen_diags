@@ -149,8 +149,8 @@ fn update_text(
     }
 }
 
-/// Get the current fps
-pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
+// Get the current fps
+fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
