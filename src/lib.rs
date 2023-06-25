@@ -93,7 +93,7 @@ impl ScreenDiagsState {
 
 /// Resource to get the current FPS.
 #[derive(Resource, Default)]
-pub struct FrameCounter(f64);
+pub struct FrameCounter(pub f64);
 
 // Updates the frame_counter
 fn update_frame_counter(
