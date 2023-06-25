@@ -18,7 +18,6 @@ const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
 
 const STRING_FORMAT: &str = "FPS: ";
 const STRING_INITIAL: &str = "FPS: ...";
-const STRING_MISSING: &str = "FPS: ???";
 
 /// A plugin that draws diagnostics on-screen with Bevy UI.
 /// Currently only the FPS is displayed.
@@ -30,6 +29,8 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+            .add_system(update_frame_counter)
+            .init_resource::<FrameCounter>()
             .init_resource::<ScreenDiagsState>();
     }
 }
@@ -44,7 +45,7 @@ impl Plugin for ScreenDiagsTextPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(ScreenDiagsPlugin)
             .add_startup_system(spawn_text)
-            .add_system(update);
+            .add_system(update_text);
     }
 }
 
@@ -90,15 +91,43 @@ impl ScreenDiagsState {
     }
 }
 
+/// Resource to get the current FPS.
+#[derive(Resource, Default)]
+pub struct FrameCounter(f64);
+
+// Updates the frame_counter
+fn update_frame_counter(
+    time: Res<Time>,
+    diagnostics: Res<Diagnostics>,
+    state_resource: Option<ResMut<ScreenDiagsState>>,
+    mut frame_counter: ResMut<FrameCounter>,
+) {
+    if let Some(mut state) = state_resource {
+        if state.update_now || state.timer.tick(time.delta()).just_finished() {
+            if state.timer.paused() {
+                return;
+            } else {
+                let fps_diags = extract_fps(&diagnostics);
+
+                if let Some(fps) = fps_diags {
+                    frame_counter.0 = fps;
+                } else {
+                    frame_counter.0 = 0.0;
+                }
+            }
+        }
+    }
+}
+
 /// The marker on the text to be updated.
 #[derive(Component)]
 pub struct ScreenDiagsText;
 
-fn update(
+fn update_text(
     time: Res<Time>,
-    diagnostics: Res<Diagnostics>,
     state_resource: Option<ResMut<ScreenDiagsState>>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
+    frame_counter: Res<FrameCounter>,
 ) {
     if let Some(mut state) = state_resource {
         if state.update_now || state.timer.tick(time.delta()).just_finished() {
@@ -109,18 +138,11 @@ fn update(
                     value.clear();
                 }
             } else {
-                let fps_diags = extract_fps(&diagnostics);
-
                 for mut text in text_query.iter_mut() {
                     let value = &mut text.sections[0].value;
                     value.clear();
 
-                    if let Some(fps) = fps_diags {
-                        write!(value, "{}{:.0}", STRING_FORMAT, fps).unwrap();
-                    } else {
-                        value.clear();
-                        write!(value, "{}", STRING_MISSING).unwrap();
-                    }
+                    write!(value, "{}{:.0}", STRING_FORMAT, frame_counter.0).unwrap();
                 }
             }
         }
