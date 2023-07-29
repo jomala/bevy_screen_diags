@@ -29,9 +29,9 @@ pub struct ScreenDiagsPlugin;
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(FrameTimeDiagnosticsPlugin::default())
-           .add_systems(Update, update_frame_counter)
-            .init_resource::<ScreenDiagsState>();
-            .init_resource::<FrameCounter>()
+            .add_systems(Update, update_frame_counter)
+            .init_resource::<ScreenDiagsState>()
+            .init_resource::<FrameCounter>();
     }
 }
 
@@ -45,7 +45,7 @@ impl Plugin for ScreenDiagsTextPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ScreenDiagsPlugin)
             .add_systems(Startup, spawn_text)
-            .add_systems(Update, update);
+            .add_systems(Update, update_text);
     }
 }
 
@@ -98,7 +98,7 @@ pub struct FrameCounter(pub f64);
 // Updates the frame_counter
 fn update_frame_counter(
     time: Res<Time>,
-    diagnostics: Res<Diagnostics>,
+    diagnostics: Res<DiagnosticsStore>,
     state_resource: Option<ResMut<ScreenDiagsState>>,
     mut frame_counter: ResMut<FrameCounter>,
 ) {
