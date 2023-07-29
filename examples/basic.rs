@@ -9,9 +9,9 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Include the plugin
-        .add_plugin(ScreenDiagsTextPlugin)
-        .add_startup_system(setup)
-        .add_system(mouse_handler)
+        .add_plugins(ScreenDiagsTextPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, mouse_handler)
         .run();
 }
 

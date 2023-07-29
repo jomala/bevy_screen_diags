@@ -7,7 +7,7 @@
 use std::fmt::Write;
 
 use bevy::{
-    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
+    diagnostic::{FrameTimeDiagnosticsPlugin, DiagnosticsStore},
     prelude::*,
     utils::Duration,
 };
@@ -29,7 +29,7 @@ pub struct ScreenDiagsPlugin;
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+        app.add_plugins(FrameTimeDiagnosticsPlugin::default())
             .init_resource::<ScreenDiagsState>();
     }
 }
@@ -42,9 +42,9 @@ pub struct ScreenDiagsTextPlugin;
 
 impl Plugin for ScreenDiagsTextPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(ScreenDiagsPlugin)
-            .add_startup_system(spawn_text)
-            .add_system(update);
+        app.add_plugins(ScreenDiagsPlugin)
+            .add_systems(Startup, spawn_text)
+            .add_systems(Update, update);
     }
 }
 
@@ -96,7 +96,7 @@ pub struct ScreenDiagsText;
 
 fn update(
     time: Res<Time>,
-    diagnostics: Res<Diagnostics>,
+    diagnostics: Res<DiagnosticsStore>,
     state_resource: Option<ResMut<ScreenDiagsState>>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
 ) {
@@ -128,7 +128,7 @@ fn update(
 }
 
 /// Get the current fps
-pub fn extract_fps(diagnostics: &Res<Diagnostics>) -> Option<f64> {
+pub fn extract_fps(diagnostics: &DiagnosticsStore) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
