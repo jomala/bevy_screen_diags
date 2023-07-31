@@ -18,7 +18,7 @@ fn main() {
         .run();
 }
 
-/// Initial set-up of the camera and the text top-left.
+/// Initial set-up of the camera and the text top-left in the default Bevy font.
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
