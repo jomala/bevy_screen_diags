@@ -35,4 +35,6 @@ the font at that path in this project (which is FiraSans-Bold).
 The `basic` example just shows the FPS count on a grey background, but you can click your mouse on
 the window to add or remove the display.
 
+The `customized` example uses the `ScreenDiagsText` marker component to tweak the font and position of the FPS display.
+
 Contributions to the crate are welcome.
