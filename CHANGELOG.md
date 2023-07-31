@@ -1,3 +1,8 @@
+## 0.6.0 (2023-08-01)
+* Update to Bevy v0.11
+* Better doc strings
+* Rename `FrameCounter` to `FrameRate`
+
 ## 0.4.0 (2022-04-27)
 
 * Breaking update for Bevy v0.7
