@@ -1,65 +1,80 @@
 #![deny(missing_docs)]
 
-//! Add a diagnostics overlay (with an FPS counter) in Bevy.
+//! Add a diagnostics overlay in Bevy.
 //!
-//! This crate provides a Bevy [plugin](ScreenDiagsPlugin) to add the diagnostics overlay.
+//! This crate provides a Bevy plugin, [ScreenDiagsPlugin] to add a resource, [ScreenDiagsState], containing the information
+//! diagnostic, and the more comprehensive [ScreenDiagsTextPlugin] to create and update the diagnostics text overlay.
+//!
+//! Currently the only diagnostic show is FPS (frames per second).
 
 use std::fmt::Write;
 
 use bevy::{
-    diagnostic::{FrameTimeDiagnosticsPlugin, DiagnosticsStore},
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
     utils::Duration,
 };
 
+/// Font size used by [ScreenDiagsTextPlugin].
 const FONT_SIZE: f32 = 32.0;
+/// Font color used by [ScreenDiagsTextPlugin].
 const FONT_COLOR: Color = Color::RED;
-const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
 
+/// The update interval used.
+const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
+/// The prefix of the string to display the FPS.
 const STRING_FORMAT: &str = "FPS: ";
+/// The string used when the FPS is unavailable.
 const STRING_INITIAL: &str = "FPS: ...";
 
-/// A plugin that draws diagnostics on-screen with Bevy UI.
+/// A plugin that collect diagnostics and updates any `Text` marked as [ScreenDiagsText].
 /// Currently only the FPS is displayed.
 ///
-/// Use the [marker struct](ScreenDiagsText) to customise the FPS counter appearance,
-/// and the [resource](ScreenDiagsState) to control its behaviour.
+/// Use the [resource](ScreenDiagsState) to control its behaviour.
 pub struct ScreenDiagsPlugin;
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(FrameTimeDiagnosticsPlugin::default())
-            .add_systems(Update, update_frame_counter)
+            .add_systems(Update, update_frame_rate)
             .init_resource::<ScreenDiagsState>()
-            .init_resource::<FrameCounter>();
+            .init_resource::<FrameRate>()
+            .add_systems(Update, update_text);
     }
 }
 
-/// A plugin to write the FPS counter to the screen
+/// A plugin that draws diagnostics on-screen with Bevy UI.
+/// Currently only the FPS is displayed.
 ///
-/// Use the [marker struct](ScreenDiagsText) to customise the FPS counter appearance,
-/// and the [resource](ScreenDiagsState) to control its behaviour.
+/// This plugin builds on [ScreenDiagsPlugin] and adds a default [ScreenDiagsText] to display
+/// the diagnostics using the font defined in `assets/fonts/screen-diags-font.ttf`,
+/// [FONT_SIZE] and [FONT_COLOR].
 pub struct ScreenDiagsTextPlugin;
 
 impl Plugin for ScreenDiagsTextPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ScreenDiagsPlugin)
-            .add_systems(Startup, spawn_text)
-            .add_systems(Update, update_text);
+            .add_systems(Startup, spawn_text);
     }
 }
 
 /// The diagnostics state resource.
 ///
-/// To disable the FPS counter, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
-/// pause the timer. Unpause the timer to re-enable the counter.
+/// To disable the FPS rate, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
+/// pause the timer. Unpause the timer to re-enable the rate.
 #[derive(Resource)]
 pub struct ScreenDiagsState {
     /// The timer that triggers a diagnostics reading.
-    /// Public, to allow flexible use, but in general use the methods to interact.
+    ///
+    /// Disabling the timer disables the collection of the diagnostics and stops the display.
+    ///
+    /// This is public, to allow flexible use, but in general you should use the methods
+    /// [enable] and [disable] to interact with it.
     pub timer: Timer,
     /// A flag to indicate to update the display, even if the timer has not popped.
-    /// Public, to allow flexible use, but in general use the methods to interact.
+    ///
+    /// This is public, to allow flexible use, but in general you should use the methods
+    /// [enable] and [disable] to interact with it.
     pub update_now: bool,
 }
 
@@ -73,34 +88,34 @@ impl Default for ScreenDiagsState {
 }
 
 impl ScreenDiagsState {
-    /// Enable the FPS display.
+    /// Enable the FPS collection and display.
     pub fn enable(&mut self) {
         self.timer.unpause();
         self.update_now = true;
     }
 
-    /// Disable the FPS display.
+    /// Disable the FPS collection and display.
     pub fn disable(&mut self) {
         self.timer.pause();
         self.update_now = true;
     }
 
-    /// Is the FPS display enabled.
+    /// Whether the FPS collection and display enabled.
     pub fn enabled(&self) -> bool {
         !self.timer.paused()
     }
 }
 
-/// Resource to get the current FPS.
+/// Resource containing the FPS (frames per second) diagnostic.
 #[derive(Resource, Default)]
-pub struct FrameCounter(pub f64);
+pub struct FrameRate(pub f64);
 
-// Updates the frame_counter
-fn update_frame_counter(
+// Updates the frame_rate measure in the resource.
+fn update_frame_rate(
     time: Res<Time>,
     diagnostics: Res<DiagnosticsStore>,
     state_resource: Option<ResMut<ScreenDiagsState>>,
-    mut frame_counter: ResMut<FrameCounter>,
+    mut frame_rate: ResMut<FrameRate>,
 ) {
     if let Some(mut state) = state_resource {
         if state.update_now || state.timer.tick(time.delta()).just_finished() {
@@ -110,9 +125,9 @@ fn update_frame_counter(
                 let fps_diags = extract_fps(&diagnostics);
 
                 if let Some(fps) = fps_diags {
-                    frame_counter.0 = fps;
+                    frame_rate.0 = fps;
                 } else {
-                    frame_counter.0 = 0.0;
+                    frame_rate.0 = 0.0;
                 }
             }
         }
@@ -123,11 +138,12 @@ fn update_frame_counter(
 #[derive(Component)]
 pub struct ScreenDiagsText;
 
+/// The Bevy system to update the text marked with [ScreenDiagsText].
 fn update_text(
     time: Res<Time>,
     state_resource: Option<ResMut<ScreenDiagsState>>,
     mut text_query: Query<&mut Text, With<ScreenDiagsText>>,
-    frame_counter: Res<FrameCounter>,
+    frame_rate: Res<FrameRate>,
 ) {
     if let Some(mut state) = state_resource {
         if state.update_now || state.timer.tick(time.delta()).just_finished() {
@@ -142,20 +158,21 @@ fn update_text(
                     let value = &mut text.sections[0].value;
                     value.clear();
 
-                    write!(value, "{}{:.0}", STRING_FORMAT, frame_counter.0).unwrap();
+                    write!(value, "{}{:.0}", STRING_FORMAT, frame_rate.0).unwrap();
                 }
             }
         }
     }
 }
 
-// Get the current fps
+/// Utility function to get the current fps from the FrameTimeDiagnosticsPlugin
 fn extract_fps(diagnostics: &DiagnosticsStore) -> Option<f64> {
     diagnostics
         .get(FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
 }
 
+/// Function to spawn the text that will be updated to the current FPS.
 fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands

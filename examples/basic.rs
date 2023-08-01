@@ -1,10 +1,13 @@
 //! This example illustrates how to enable and disable the FPS text in the bottom left hand corner
 //! for a blank screen.
+//!
+//! Click the screen to toggle whether the diagnostic text is enabled.
 
 use bevy::prelude::*;
 
 use bevy_screen_diags::{ScreenDiagsState, ScreenDiagsTextPlugin};
 
+/// Enable the plug-ins.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -15,11 +18,12 @@ fn main() {
         .run();
 }
 
+/// Initial set-up of the camera for the blank scene.
 fn setup(mut commands: Commands) {
-    // Add further cameras to test that they interoperate with the one in the plugin.
     commands.spawn(Camera2dBundle::default());
 }
 
+/// The mouse click handler.
 fn mouse_handler(
     mouse_button_input: Res<Input<MouseButton>>,
     mut diags_state: ResMut<ScreenDiagsState>,

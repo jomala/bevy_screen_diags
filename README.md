@@ -5,6 +5,8 @@
 
 `bevy_screen_diags` adds a very simple frames-per-second (FPS) display to your screen in Bevy.
 
+It was inspired by (and copied from) https://github.com/bevyengine/bevy/blob/main/examples/ui/text.rs.
+
 ## Usage
 
 Put the crate into your `Cargo.toml`.
