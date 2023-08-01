@@ -1,4 +1,4 @@
-//! This example illustrates how to enable and disable the FPS text in the bottom left hand corner
+//! This example illustrates how to enable and disable the FPS text in the top left hand corner
 //! for a blank screen.
 //!
 //! Click the screen to toggle whether the diagnostic text is enabled.
