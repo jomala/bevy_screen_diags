@@ -7,18 +7,17 @@
 //!
 //! Currently the only diagnostic show is FPS (frames per second).
 
-use std::fmt::Write;
+use std::time::Duration;
 
 use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
-    utils::Duration,
 };
 
 /// Font size used by [ScreenDiagsTextPlugin].
 const FONT_SIZE: f32 = 32.0;
 /// Font color used by [ScreenDiagsTextPlugin].
-const FONT_COLOR: Color = Color::RED;
+const FONT_COLOR: Color = Color::Srgba(Srgba::RED);
 
 /// The update interval used.
 const UPDATE_INTERVAL: Duration = Duration::from_secs(1);
@@ -62,7 +61,7 @@ impl Plugin for ScreenDiagsTextPlugin {
 ///
 /// To disable the FPS rate, get a [ResMut](bevy::prelude::ResMut) reference to this struct and
 /// pause the timer. Unpause the timer to re-enable the rate.
-#[derive(Resource)]
+#[derive(Resource)] // Must use 'static lifetime
 pub struct ScreenDiagsState {
     /// The timer that triggers a diagnostics reading.
     ///
@@ -102,7 +101,7 @@ impl ScreenDiagsState {
 
     /// Whether the FPS collection and display enabled.
     pub fn enabled(&self) -> bool {
-        !self.timer.paused()
+        !self.timer.is_paused()
     }
 }
 
@@ -119,7 +118,7 @@ fn update_frame_rate(
 ) {
     if let Some(mut state) = state_resource {
         if state.update_now || state.timer.tick(time.delta()).just_finished() {
-            if state.timer.paused() {
+            if state.timer.is_paused() {
                 return;
             } else {
                 let fps_diags = extract_fps(&diagnostics);
@@ -147,18 +146,14 @@ fn update_text(
 ) {
     if let Some(mut state) = state_resource {
         if state.update_now || state.timer.tick(time.delta()).just_finished() {
-            if state.timer.paused() {
+            if state.timer.is_paused() {
                 // Time is paused so remove text
                 for mut text in text_query.iter_mut() {
-                    let value = &mut text.sections[0].value;
-                    value.clear();
+                    text.clear();
                 }
             } else {
                 for mut text in text_query.iter_mut() {
-                    let value = &mut text.sections[0].value;
-                    value.clear();
-
-                    write!(value, "{}{:.0}", STRING_FORMAT, frame_rate.0).unwrap();
+                    *text = Text::new(format!("{}{:.0}", STRING_FORMAT, frame_rate.0));
                 }
             }
         }
@@ -168,7 +163,7 @@ fn update_text(
 /// Utility function to get the current fps from the FrameTimeDiagnosticsPlugin
 fn extract_fps(diagnostics: &DiagnosticsStore) -> Option<f64> {
     diagnostics
-        .get(FrameTimeDiagnosticsPlugin::FPS)
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
         .and_then(|fps| fps.average())
 }
 
@@ -176,19 +171,14 @@ fn extract_fps(diagnostics: &DiagnosticsStore) -> Option<f64> {
 fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/screen-diags-font.ttf");
     commands
-        .spawn(TextBundle {
-            text: Text {
-                sections: vec![TextSection {
-                    value: STRING_INITIAL.to_string(),
-                    style: TextStyle {
-                        font,
-                        font_size: FONT_SIZE,
-                        color: FONT_COLOR,
-                    },
-                }],
+        .spawn((
+            Text::new(STRING_INITIAL),
+            TextFont {
+                font,
+                font_size: FONT_SIZE,
                 ..Default::default()
             },
-            ..Default::default()
-        })
-        .insert(ScreenDiagsText);
+            TextColor(FONT_COLOR),
+            ScreenDiagsText,
+        ));
 }

@@ -20,22 +20,20 @@ fn main() {
 
 /// Initial set-up of the camera and the text top-left in the default Bevy font.
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     commands.spawn((
-        TextBundle::from_section(
-            "",
-            TextStyle {
+        Text::new(""),
+        TextFont {
                 font_size: 50.0,
                 ..default()
-            },
-        ),
+        },
         ScreenDiagsText,
     ));
 }
 
 /// The mouse click handler.
 fn mouse_handler(
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut diags_state: ResMut<ScreenDiagsState>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {

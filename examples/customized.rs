@@ -15,18 +15,20 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 }
 
-fn tweak_fps_font(mut text_query: Query<&mut Text, With<ScreenDiagsText>>) {
-    let mut text = text_query.single_mut();
-    text.sections[0].style.color = Color::GREEN;
-    text.sections[0].style.font_size = 92.0;
+fn tweak_fps_font(mut text_query: Query<(&mut TextFont, &mut TextColor), With<ScreenDiagsText>>) {
+    if let Ok(mut text) = text_query.single_mut() {
+        text.1.0 = Color::Srgba(Srgba::GREEN);
+        text.0.font_size = 92.0;
+    }
 }
 
-fn tweak_fps_position(mut style_query: Query<&mut Style, With<ScreenDiagsText>>) {
-    let mut style = style_query.single_mut();
-    style.position_type = PositionType::Absolute;
-    style.right = Val::Percent(0.0);
-    style.bottom = Val::Percent(0.0);
+fn tweak_fps_position(mut style_query: Query<&mut Node, With<ScreenDiagsText>>) {
+    if let Ok(mut style) = style_query.single_mut() {
+        style.position_type = PositionType::Absolute;
+        style.right = Val::Percent(0.0);
+        style.bottom = Val::Percent(0.0);
+    }
 }

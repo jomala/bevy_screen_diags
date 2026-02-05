@@ -20,12 +20,12 @@ fn main() {
 
 /// Initial set-up of the camera for the blank scene.
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 }
 
 /// The mouse click handler.
 fn mouse_handler(
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut diags_state: ResMut<ScreenDiagsState>,
 ) {
     if mouse_button_input.just_released(MouseButton::Left) {

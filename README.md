@@ -12,7 +12,7 @@ It was inspired by (and copied from) https://github.com/bevyengine/bevy/blob/mai
 Put the crate into your `Cargo.toml`.
 
 ```toml
-bevy_screen_diags = "0.6.0"
+bevy_screen_diags = "0.7.0"
 ```
 
 Include the plugin when you build your `App`.
